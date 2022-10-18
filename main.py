@@ -4,9 +4,9 @@ import functools
 # def setup(): #this is currently just copied, make our own.
 group = PairingGroup('SS512')  # could maybe throw the security parameter in here
 g = group.random(G1)
-H0 = lambda m: group.hash(('0', m), type=G1)
-H1 = lambda m: group.hash(('1', m), type=G1)
-H2 = lambda m: group.hash(('2', m), type=G1)
+H0 = lambda m: group.hash(('0'), type=G1)
+H1 = lambda m: group.hash(('1'), type=G1)
+H2 = lambda m: group.hash(('2'), type=G1)
 
 
 class Server():
@@ -23,7 +23,6 @@ class Server():
         TQ3 = TQs[2]
         I = TQs[3]
         C_prod = functools.reduce(lambda a, b: a * b, C)
-
         left_of_eq = group.pair_prod(TQ1, C_prod)
         right_of_eq_left = group.pair_prod(A, TQ2)
         docs = []
