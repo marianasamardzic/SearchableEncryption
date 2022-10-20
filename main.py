@@ -8,6 +8,7 @@ g = group.random(G1)
 H0 = lambda m: group.hash(('0', m), type=G1)
 H1 = lambda m: group.hash(('1', m), type=G1)
 H2 = lambda m: group.hash(('2', m), type=G1)
+keyword_fields = ["name", "surname", "place_of_birth", "residence"]
 
 
 class MPECK:
@@ -21,11 +22,18 @@ class MPECK:
 class Trapdoor:
 
     def __init__(self, indexes, keywords, t, sk):
+
+        keywords_extended = []
+        for i, keyword_field in enumerate(keyword_fields):
+            if i in indexes:
+                position_of_i = indexes.index(i)
+                keywords_extended.append(keyword_field + "." + keywords[position_of_i])
+
         self.hidden_t = g ** t  # hide randomness
         self.keywords_h1 = functools.reduce(lambda a, b: a * b,
-                                            map(lambda w: H1(w) ** t, keywords))  # hash1 of the keyword to the t
+                                            map(lambda w: H1(w) ** t, keywords_extended))  # hash1 of the keyword to the t
         self.keywords_h2 = functools.reduce(lambda a, b: a * b, map(lambda w: H2(w) ** (t / sk),
-                                                                    keywords))  # hash2 of the keyword to the t/sk
+                                                                    keywords_extended))  # hash2 of the keyword to the t/sk
         self.indexes = indexes
 
 
@@ -107,7 +115,10 @@ class Sender:
 
     def store_to_server(self, document, pks, keywords):
         encrypted_document = self.encryptFile(document)
-        m_peck = MPECK(pks, keywords, self.r, self.s)
+        keywords_extended = []
+        for index, keyword_field in enumerate(keyword_fields):
+            keywords_extended.append(keyword_field + "." + keywords[index])
+        m_peck = MPECK(pks, keywords_extended, self.r, self.s)
         self.server.database_entries.append(DatabaseEntry(encrypted_document, m_peck))
 
 
@@ -116,9 +127,13 @@ def main():
     consultant = Sender(server)
     client0 = Sender(server)
 
-    consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['Alice', 'Delft'])
+    # This should not return anything
+    # consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['Alice', 'Amsterdam', 'Delft'])
+    # trap = Trapdoor([1,2], ['Delft', 'Amsterdam'], client0.t, client0.sk)
 
-    trap = Trapdoor([1], ['Delft'], client0.t, client0.sk)
+    consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['Alice', 'None', 'Delft', 'Amsterdam'])
+    trap = Trapdoor([2], ['None'], client0.t, client0.sk)
+
     outputs = server.test_on_all_docs(client0.pk, trap)
 
     for output in outputs:
