@@ -126,23 +126,45 @@ class Sender:
 def main():
     server = Server()
     consultant = Sender(server)
-    client0 = Sender(server)
+    client1 = Sender(server)
+    client2 = Sender(server)
 
-    mal = Sender(server)
+    current_person = None
 
-    # This should not return anything
-    # consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['Alice', 'Amsterdam', 'Delft'])
-    # trap = Trapdoor([1,2], ['Delft', 'Amsterdam'], client0.t, client0.sk)
+    print('Who are you?')
+    print('0 - Consultant')
+    print('1 - client 1')
+    print('2 - client 2')
 
-    consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['id12', '2017', 'jan', 'report','None'])
-    consultant.store_to_server("Second document", [consultant.pk, client0.pk], ['id12', '2017', 'jan', 'report','None'])
-    trap = Trapdoor([1], ['2017'], client0.t, client0.sk)
+    value = int(input("Please enter a number:\n"))
 
-    outputs = server.test_on_all_docs(client0.pk, trap)
+    if value == 0:
+        current_person = consultant
+    elif value == 1:
+        current_person = client1
+    else:
+        current_person = client2
 
-    for output in outputs:
-        temp = client0.decryptFile(output, client0.sk)
-        print(intListToStr(temp))
+
+    print('What operation would you like to do?')
+    print('0 - Upload data')
+    print('1 - Query data')
+
+    value = int(input("Please enter a number:\n"))
+
+
+    if value == 0:
+        print('uploading data')
+        print('Fill in the information below:')
+        year = int(input("Please enter a year:\n"))
+        month = int(input("Please enter a month:\n"))
+        type = int(input("Please enter a type:\n"))
+        txtype = int(input("Please enter a transaction type:\n"))
+        #TODO! get all the input from user and insert data
+    else:
+        print('query data')
+        #TODO! aks user on what fields to query
+        # don't ask for redundant information!
 
 
 if __name__ == "__main__":
