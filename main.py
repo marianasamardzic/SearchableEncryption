@@ -14,7 +14,7 @@ class MPECK:
     def __init__(self, pks, keywords, r, s):
         self.hidden_r = g ** r  # hide the random value r
         self.hidden_pks = map(lambda y: y ** s, pks)  # every public key to the power of s
-        self.hidden_keywords = map(lambda w: (H1(w) ** r) * (H2(w) ** s), keywords)  # for every keyword
+        self.hidden_keywords = list(map(lambda w: (H1(w) ** r) * (H2(w) ** s), keywords))  # for every keyword
         # TODO add check if C is of a given length
 
 
@@ -26,6 +26,7 @@ class Trapdoor:
                                             map(lambda w: H1(w) ** t, keywords))  # hash1 of the keyword to the t
         self.keywords_h2 = functools.reduce(lambda a, b: a * b, map(lambda w: H2(w) ** (t / sk),
                                                                     keywords))  # hash2 of the keyword to the t/sk
+        self.indexes = indexes
 
 
 class DatabaseEntry:
@@ -48,7 +49,12 @@ class Server:
         self.database_entries = []
 
     def test(self, pk, m_peck: MPECK, trapdoor: Trapdoor):
-        m_peck_hidden_keywords_product = functools.reduce(lambda a, b: a * b, m_peck.hidden_keywords)
+
+        # use only the keywords from trapdoor
+        m_peck_hidden_keywords_product = 1
+        for index in trapdoor.indexes:
+            m_peck_hidden_keywords_product *= m_peck.hidden_keywords[index]
+
         mpeck_Equation = group.pair_prod(trapdoor.hidden_t, m_peck_hidden_keywords_product)
 
         trapdoor_h1_equation = group.pair_prod(m_peck.hidden_r, trapdoor.keywords_h1)
@@ -110,9 +116,9 @@ def main():
     consultant = Sender(server)
     client0 = Sender(server)
 
-    consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['Alice'])
+    consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['Alice', 'Delft'])
 
-    trap = Trapdoor([0], ['Alice'], client0.t, client0.sk)
+    trap = Trapdoor([1], ['Delft'], client0.t, client0.sk)
     outputs = server.test_on_all_docs(client0.pk, trap)
 
     for output in outputs:
