@@ -2,14 +2,15 @@ import functools
 
 from charm.toolbox.pairinggroup import PairingGroup, G1, ZR
 
-# def setup(): #this is currently just copied, make our own.
-group = PairingGroup('SS512')  # could maybe throw the security parameter in here
+group = PairingGroup('SS512')
 g = group.random(G1)
 H0 = lambda m: group.hash(('0', m), type=G1)
 H1 = lambda m: group.hash(('1', m), type=G1)
 H2 = lambda m: group.hash(('2', m), type=G1)
-keyword_fields = ["name", "surname", "place_of_birth", "residence"]
+keyword_fields = ["clientID", "year", "month", "document_type", "transaction_type"]
 
+def intListToStr(intList):
+    return ''.join([chr(x) for x in intList])
 
 class MPECK:
     def __init__(self, pks, keywords, r, s):
@@ -127,18 +128,21 @@ def main():
     consultant = Sender(server)
     client0 = Sender(server)
 
+    mal = Sender(server)
+
     # This should not return anything
     # consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['Alice', 'Amsterdam', 'Delft'])
     # trap = Trapdoor([1,2], ['Delft', 'Amsterdam'], client0.t, client0.sk)
 
-    consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['Alice', 'None', 'Delft', 'Amsterdam'])
-    trap = Trapdoor([2], ['None'], client0.t, client0.sk)
+    consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['id12', '2017', 'jan', 'report','None'])
+    consultant.store_to_server("Second document", [consultant.pk, client0.pk], ['id12', '2017', 'jan', 'report','None'])
+    trap = Trapdoor([1], ['2017'], client0.t, client0.sk)
 
     outputs = server.test_on_all_docs(client0.pk, trap)
 
     for output in outputs:
         temp = client0.decryptFile(output, client0.sk)
-        print([chr(x) for x in temp])
+        print(intListToStr(temp))
 
 
 if __name__ == "__main__":
