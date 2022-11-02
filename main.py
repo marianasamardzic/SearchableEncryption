@@ -1,5 +1,4 @@
 import functools
-
 from charm.toolbox.pairinggroup import PairingGroup, G1, ZR
 
 group = PairingGroup('SS512')
@@ -7,10 +6,14 @@ g = group.random(G1)
 H0 = lambda m: group.hash(('0', m), type=G1)
 H1 = lambda m: group.hash(('1', m), type=G1)
 H2 = lambda m: group.hash(('2', m), type=G1)
-keyword_fields = ["clientID", "year", "month", "document_type", "transaction_type"]
+
+# TODO! modify the keywords accordintly
+keyword_fields = ["year", "month"]
+
 
 def intListToStr(intList):
     return ''.join([chr(x) for x in intList])
+
 
 class MPECK:
     def __init__(self, pks, keywords, r, s):
@@ -23,7 +26,6 @@ class MPECK:
 class Trapdoor:
 
     def __init__(self, indexes, keywords, t, sk):
-
         keywords_extended = []
         for i, keyword_field in enumerate(keyword_fields):
             if i in indexes:
@@ -32,7 +34,8 @@ class Trapdoor:
 
         self.hidden_t = g ** t  # hide randomness
         self.keywords_h1 = functools.reduce(lambda a, b: a * b,
-                                            map(lambda w: H1(w) ** t, keywords_extended))  # hash1 of the keyword to the t
+                                            map(lambda w: H1(w) ** t,
+                                                keywords_extended))  # hash1 of the keyword to the t
         self.keywords_h2 = functools.reduce(lambda a, b: a * b, map(lambda w: H2(w) ** (t / sk),
                                                                     keywords_extended))  # hash2 of the keyword to the t/sk
         self.indexes = indexes
@@ -51,6 +54,7 @@ class ServerOutput:
         self.encrypted_document = encrypted_document
         self.hidden_pk = hidden_pk
         self.hidden_r = hidden_r
+
 
 class Server:
 
@@ -105,8 +109,8 @@ class Sender:
             result.append(left[i] ^ right[i])
         return result
 
-    def decryptFile(self, serverOutput: ServerOutput ,sk):
-        bilinear_map = group.pair_prod(serverOutput.hidden_r, serverOutput.hidden_pk) ** (1/sk)
+    def decryptFile(self, serverOutput: ServerOutput, sk):
+        bilinear_map = group.pair_prod(serverOutput.hidden_r, serverOutput.hidden_pk) ** (1 / sk)
         hash = H0(bilinear_map)
         left = bytearray(group.serialize(hash))
         result = []
@@ -128,43 +132,59 @@ def main():
     consultant = Sender(server)
     client1 = Sender(server)
     client2 = Sender(server)
+    participants = [consultant, client1, client2]
 
-    current_person = None
+    while True:
+        current_person = None
 
-    print('Who are you?')
-    print('0 - Consultant')
-    print('1 - client 1')
-    print('2 - client 2')
+        print('Who are you?')
+        for i, participant, in enumerate(participants):
+            if i == 0:
+                print('0 - Consultant')
+            else:
+                print(f'{i} - Client{i}')
+        current_person = participants[int(input("Please enter a number:\n"))]
 
-    value = int(input("Please enter a number:\n"))
+        print('What operation would you like to do?')
+        print('0 - Upload data')
+        print('1 - Query data')
+        value = int(input("Please enter a number:\n"))
 
-    if value == 0:
-        current_person = consultant
-    elif value == 1:
-        current_person = client1
-    else:
-        current_person = client2
+        if value == 0:
+            print('uploading data')
+            print('Fill in the information below:')
+            array = []
+            for i, field, in enumerate(keyword_fields):
+                array.append(input(f'Please enter {field}:\n'))
+
+            msg = input("Please type your message:\n")
+
+            print('Who should have access to this? eg. 0 1 2')
+            list = [consultant.pk, current_person.pk]
+            allowed = [int(x) for x in input().split()]
+            for a in allowed:
+                list.append(participants[a].pk)
+
+            current_person.store_to_server(msg, list, array)
 
 
-    print('What operation would you like to do?')
-    print('0 - Upload data')
-    print('1 - Query data')
+        else:
+            print('Please fill in what keywords you want to search for. Each emtpy field will be ignored.')
+            I = []
+            Q = []
+            for i, field, in enumerate(keyword_fields):
+                input_value = input(f'Please enter {field}:\n')
+                if input_value != "":
+                    I.append(int(i))
+                    Q.append(input_value)
 
-    value = int(input("Please enter a number:\n"))
-
-
-    if value == 0:
-        print('uploading data')
-        print('Fill in the information below:')
-        year = int(input("Please enter a year:\n"))
-        month = int(input("Please enter a month:\n"))
-        type = int(input("Please enter a type:\n"))
-        txtype = int(input("Please enter a transaction type:\n"))
-        #TODO! get all the input from user and insert data
-    else:
-        print('query data')
-        #TODO! aks user on what fields to query
-        # don't ask for redundant information!
+            # Generate trapdoor and send to server
+            trap = Trapdoor(I, Q, current_person.t, current_person.sk)
+            outputs = server.test_on_all_docs(current_person.pk, trap)
+            for output in outputs:
+                print("=================================================")
+                print(intListToStr(current_person.decryptFile(output, current_person.sk)))
+                print("=================================================")
 
 
 if __name__ == "__main__":
