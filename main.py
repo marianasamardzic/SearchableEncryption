@@ -8,8 +8,7 @@ H1 = lambda m: group.hash(('1', m), type=G1)
 H2 = lambda m: group.hash(('2', m), type=G1)
 
 # TODO! modify the keywords accordintly
-keyword_fields = ["year", "month"]
-
+keyword_fields = ["clientID", "year", "month", "document_type", "transaction_type"]
 
 def intListToStr(intList):
     return ''.join([chr(x) for x in intList])
