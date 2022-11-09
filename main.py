@@ -17,7 +17,7 @@ def intListToStr(intList):
 class MPECK:
     def __init__(self, pks, keywords, r, s):
         self.hidden_r = g ** r  # hide the random value r
-        self.hidden_pks = map(lambda y: y ** s, pks)  # every public key to the power of s
+        self.hidden_pks = list(map(lambda y: y ** s, pks))  # every public key to the power of s
         self.hidden_keywords = list(map(lambda w: (H1(w) ** r) * (H2(w) ** s), keywords))  # for every keyword
         # TODO add check if C is of a given length
 
@@ -159,12 +159,12 @@ def main():
             msg = input("Please type your message:\n")
 
             print('Who should have access to this? eg. 0 1 2')
-            list = [consultant.pk, current_person.pk]
+            person_list = [consultant.pk, current_person.pk]
             allowed = [int(x) for x in input().split()]
             for a in allowed:
-                list.append(participants[a].pk)
+                person_list.append(participants[a].pk)
 
-            current_person.store_to_server(msg, list, array)
+            current_person.store_to_server(msg, person_list, array)
 
 
         else:

@@ -68,7 +68,7 @@ class Test(TestCase):
         decrypted_outputs = []
         for output in outputs:
             decrypted_outputs.append(intListToStr(self.client0.decryptFile(output, self.client0.sk)))
-        assert len(outputs) == 2
+        assert len(outputs) == 2 # it fails here as well
 
         # RUN THE SAME QUERY AGAIN -- not working!!!
         another_trap = Trapdoor([1], ['2017'], self.client0.t, self.client0.sk)
