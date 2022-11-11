@@ -181,10 +181,16 @@ def main():
             # Generate trapdoor and send to server
             trap = Trapdoor(I, Q, current_person.t, current_person.sk)
             outputs = server.test_on_all_docs(current_person.pk, trap)
-            for output in outputs:
+
+            if len(outputs) == 0:
                 print("=================================================")
-                print(intListToStr(current_person.decryptFile(output, current_person.sk)))
+                print("NO MATCHES!")
                 print("=================================================")
+            else:
+                for output in outputs:
+                    print("=================================================")
+                    print(intListToStr(current_person.decryptFile(output, current_person.sk)))
+                    print("=================================================")
 
 
 if __name__ == "__main__":
