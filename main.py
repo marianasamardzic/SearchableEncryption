@@ -154,15 +154,16 @@ def main():
             print('Fill in the information below:')
             array = []
             for i, field, in enumerate(keyword_fields):
-                array.append(input(f'Please enter {field}:\n'))
+                if i == 0 and current_person == consultant:
+                    array.append(input(f'Please enter {field}:\n'))
+                elif i == 0 and current_person != consultant:
+                    array.append(str(participants.index(current_person)))
+                else:
+                    array.append(input(f'Please enter {field}:\n'))
 
             msg = input("Please type your message:\n")
 
-            print('Who should have access to this? eg. 0 1 2')
-            person_list = [consultant.pk, current_person.pk]
-            allowed = [int(x) for x in input().split()]
-            for a in allowed:
-                person_list.append(participants[a].pk)
+            person_list = [consultant.pk, current_person.pk, participants[int(array[0])].pk]
 
             current_person.store_to_server(msg, person_list, array)
 
