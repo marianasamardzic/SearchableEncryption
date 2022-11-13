@@ -4,9 +4,9 @@ import functools
 # def setup(): #this is currently just copied, make our own.
 group = PairingGroup('SS512')  # could maybe throw the security parameter in here
 g = group.random(G1)
-H0 = lambda m: group.hash(('0', m), type=G1)
-H1 = lambda m: group.hash(('1', m), type=G1)
-H2 = lambda m: group.hash(('2', m), type=G1)
+H0 = lambda m: group.hash(('0'), type=G1)
+H1 = lambda m: group.hash(('1'), type=G1)
+H2 = lambda m: group.hash(('2'), type=G1)
 
 
 class Server():
@@ -17,18 +17,15 @@ class Server():
     def Test(self, pk, S, TQs):
         A = S[0]
         B = S[1]
-        C = list(S[2])
+        C = S[2]
         TQ1 = TQs[0]
         TQ2 = TQs[1]
         TQ3 = TQs[2]
         I = TQs[3]
-
-        C_prod = 1
-        for i in I:
-            C_prod *= C[i]
-
+        C_prod = functools.reduce(lambda a, b: a * b, C)
         left_of_eq = group.pair_prod(TQ1, C_prod)
         right_of_eq_left = group.pair_prod(A, TQ2)
+        docs = []
         for b in B:
             right_of_eq_right = group.pair_prod(b, TQ3)
             if left_of_eq == right_of_eq_left * right_of_eq_right:
@@ -55,7 +52,7 @@ class Sender:
 
     def mPECK(self, pks, W):
         A = g ** self.r
-        B = map(lambda pk: pk ** self.s, pks)
+        B = map(lambda y: y ** self.s, pks)
         C = map(lambda w: (H1(w) ** self.r) * (H2(w) ** self.s), W)
         S = (A, B, C)
         return S
@@ -95,9 +92,10 @@ def main():
     consultant = Sender(server)
     client0 = Sender(server)
 
-    consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['Alice', 'Delft'])
+    consultant.store_to_server("Hello world", [consultant.pk, client0.pk], ['hello'])
+    consultant.store_to_server("Hello", [consultant.pk], ['hello'])
 
-    trap = client0.Trapdoor([0], ['Alice'])
+    trap = client0.Trapdoor([0], ['hello'])
     results = server.test_on_all_docs(client0.pk, trap)
 
     for doc in results:
